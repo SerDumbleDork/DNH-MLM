@@ -11,7 +11,6 @@ public class Point : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // Anchored nodes NEVER move
         if (isAnchored)
         {
             rb.bodyType = RigidbodyType2D.Static;
@@ -20,7 +19,6 @@ public class Point : MonoBehaviour
         }
         else
         {
-            // Free nodes start as Kinematic (build mode)
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.gravityScale = 0f;
             rb.freezeRotation = true;

@@ -201,11 +201,70 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1122078431272413760, guid: 24746723f95786c48a96fbb9e01ff83c, type: 3}
   m_PrefabInstance: {fileID: 40200161}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &40200163 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -6613339271227595415, guid: 24746723f95786c48a96fbb9e01ff83c, type: 3}
+  m_PrefabInstance: {fileID: 40200161}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8afcc57cb6b7d344d9e420747aeb0bf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
 --- !u!4 &49927321 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1122078431272413760, guid: 24746723f95786c48a96fbb9e01ff83c, type: 3}
   m_PrefabInstance: {fileID: 696785959}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &287322098
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 287322100}
+  - component: {fileID: 287322099}
+  m_Layer: 0
+  m_Name: SimHandler
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &287322099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287322098}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9199ccfe42b04c34285d259890cdca70, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Sim
+  goal: {fileID: 1981196549}
+  simulationRunning: 0
+  carPrefab: {fileID: 8119519912251753205, guid: ab0f0ddaf74e4044ba21442582c740b8, type: 3}
+  hideUI: 0
+--- !u!4 &287322100
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 287322098}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.98904, y: 16.82714, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -1201,6 +1260,61 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!1 &1272162596
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1272162598}
+  - component: {fileID: 1272162597}
+  m_Layer: 0
+  m_Name: BridgePopTrainer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1272162597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272162596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 589eb84951b69504f8c163064b4c2d08, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BridgePBTManager
+  populationSize: 20
+  genesPerBridge: 20
+  hiddenSize: 48
+  anchorPoints:
+  - {fileID: 1627555234}
+  - {fileID: 40200163}
+  - {fileID: 2091808532}
+  models: []
+  currentModelIndex: 0
+  generationIndex: 0
+  globalGeneration: 0
+--- !u!4 &1272162598
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1272162596}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.98904, y: 16.82714, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1288372962
 GameObject:
   m_ObjectHideFlags: 0
@@ -1400,75 +1514,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!1 &1475333106
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1475333108}
-  - component: {fileID: 1475333107}
-  m_Layer: 0
-  m_Name: AIController
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1475333107
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1475333106}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4a410f87b18c196408fae36f57ab8163, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::AIController
-  bc: {fileID: 1554527208}
-  firstNode: {fileID: 1627555234}
-  mlModel: {fileID: 1557973269}
-  population: []
-  populationSize: 20
-  genesPerIndividual: 20
-  eliteCount: 4
-  mutationChance: 0.3
-  mutationOffset: 0.5
-  buildTime: 2
-  simulationTime: 6
-  maxGenerations: 100
-  geneMinPos: {x: -15, y: -5}
-  geneMaxPos: {x: 15, y: 5}
-  aiTimeScale: 1
-  aiTargetFrameRate: 30
-  gridStep: 1
-  lastPrediction: 0
-  lastActualDistance: 0
-  hasPrediction: 0
-  targetDistanceForFitness: 25
-  distanceWeight: 100
-  spanWeight: 5
-  brokenPenalty: 20
-  successBonus: 500
---- !u!4 &1475333108
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1475333106}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.52487, y: 8.25819, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1554527202
 GameObject:
   m_ObjectHideFlags: 0
@@ -1479,7 +1524,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1554527204}
   - component: {fileID: 1554527206}
-  - component: {fileID: 1554527207}
   - component: {fileID: 1554527208}
   m_Layer: 0
   m_Name: GameManager
@@ -1517,21 +1561,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   beamLayerName: Beam
   roadLayerName: Road
---- !u!114 &1554527207
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1554527202}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9199ccfe42b04c34285d259890cdca70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  simulationRunning: 0
-  carPrefab: {fileID: 8119519912251753205, guid: ab0f0ddaf74e4044ba21442582c740b8, type: 3}
-  hideUI: 0
 --- !u!114 &1554527208
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1547,71 +1576,12 @@ MonoBehaviour:
   nodePrefab: {fileID: 3317478959578217078, guid: 24746723f95786c48a96fbb9e01ff83c, type: 3}
   roadPrefab: {fileID: 8473459762243633085, guid: 431cbdbc27c3f1c4e880600d62fa9e33, type: 3}
   beamPrefab: {fileID: 2812171142295587752, guid: c9d0629027fbf9543a4d1cf6d51bcd9d, type: 3}
-  snapRadius: 1
+  snapRadius: 2
   maxLength: 5
   mode: 0
-  aiControl: 0
+  aiControl: 1
   aiMousePos: {x: 0, y: 0}
---- !u!1 &1557973268
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1557973270}
-  - component: {fileID: 1557973269}
-  m_Layer: 0
-  m_Name: BridgeMLModel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1557973269
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1557973268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ac7824ebdebb684cadac73b9a52b957, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BridgeMLModel
-  genesPerIndividual: 20
-  hiddenSize: 32
-  learningRate: 0.0005
-  maxSamples: 5000
-  epochsPerTrain: 10
-  saveLocally: 0
-  uploadToWeb: 1
-  loadDatasetFromSheetOnStart: 1
-  googleSheetsUrl: https://script.google.com/macros/s/AKfycbwgRDe26v7gi_QBpWoPYj143b3rcf6j8p7IpM_w-fbKERP3EIHvbvus8c_OJfLcChSW/exec
-  csvFolderName: bridge_training_data
-  csvFilePrefix: bridge_data
-  weightClamp: 5
-  populationSize: 20
-  globalGeneration: 0
-  lastLoss: 0
-  lastAccuracy: 0
---- !u!4 &1557973270
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1557973268}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10.52487, y: 8.25819, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  ai: {fileID: 1628518933}
 --- !u!1001 &1627555232
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1705,6 +1675,58 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8afcc57cb6b7d344d9e420747aeb0bf0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
+--- !u!1 &1628518932
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1628518934}
+  - component: {fileID: 1628518933}
+  m_Layer: 0
+  m_Name: PBTAIController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1628518933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628518932}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36c5e70784aeca44ebe321812fa6bcfb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PBTBridgeAIController
+  bc: {fileID: 1554527208}
+  sim: {fileID: 287322099}
+  pbtManager: {fileID: 1272162597}
+  goal: {fileID: 1981196549}
+  simulationTime: 10
+  aiTimeScale: 10
+  aiTargetFrameRate: 60
+  toggleKey: 102
+--- !u!4 &1628518934
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628518932}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 4.98904, y: 16.82714, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1981196548
 GameObject:
   m_ObjectHideFlags: 0
@@ -1846,6 +1868,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2091808532 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: -6613339271227595415, guid: 24746723f95786c48a96fbb9e01ff83c, type: 3}
+  m_PrefabInstance: {fileID: 696785959}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8afcc57cb6b7d344d9e420747aeb0bf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1855,5 +1888,6 @@ SceneRoots:
   - {fileID: 965853174}
   - {fileID: 1554527204}
   - {fileID: 1981196552}
-  - {fileID: 1475333108}
-  - {fileID: 1557973270}
+  - {fileID: 1272162598}
+  - {fileID: 1628518934}
+  - {fileID: 287322100}

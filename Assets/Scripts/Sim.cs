@@ -3,6 +3,8 @@ using System.Collections;
 
 public class Sim : MonoBehaviour
 {
+    public Goal goal;
+
     public bool simulationRunning = false;
     public GameObject carPrefab;
     public bool hideUI = false;
@@ -11,8 +13,10 @@ public class Sim : MonoBehaviour
 
     void Start()
     {
+        simulationRunning = true;
+
         SpawnCar();
-        SetSimulationState(false);
+        SetSimulationState(true);
     }
 
     void Update()
@@ -35,12 +39,8 @@ public class Sim : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Toggle between BUILD (no physics on bridge) and SIMULATION (full physics).
-    /// </summary>
     public void SetSimulationState(bool runPhysics)
     {
-        // 1. NODES (Points)
         foreach (Point p in FindObjectsOfType<Point>())
         {
             if (p == null || p.rb == null) continue;
@@ -49,11 +49,8 @@ public class Sim : MonoBehaviour
 
             if (p.isAnchored)
             {
-                // Anchors never move
                 rb.bodyType = RigidbodyType2D.Static;
                 rb.gravityScale = 0f;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
             }
             else
             {
@@ -74,7 +71,6 @@ public class Sim : MonoBehaviour
             }
         }
 
-        // 2. ROAD PLANKS
         foreach (RoadBar road in FindObjectsOfType<RoadBar>())
         {
             if (road == null) continue;
@@ -91,7 +87,6 @@ public class Sim : MonoBehaviour
             }
             else
             {
-                // Hold roads still in build mode
                 rb.bodyType = RigidbodyType2D.Kinematic;
                 rb.simulated = true;
                 rb.isKinematic = true;
@@ -101,18 +96,15 @@ public class Sim : MonoBehaviour
             }
         }
 
-        // 3. CAR (and any other loose rigidbodies)
         foreach (Rigidbody2D rb in FindObjectsOfType<Rigidbody2D>())
         {
             if (rb == null) continue;
 
-            // Skip things we already handled
             if (rb.CompareTag("Terrain"))              continue;
             if (rb.GetComponent<Point>() != null)      continue;
             if (rb.GetComponent<RoadBar>() != null)    continue;
             if (rb.GetComponent<BeamBar>() != null)    continue;
 
-            // Assume everything else is the car or similar dynamic object
             if (runPhysics)
             {
                 rb.bodyType = RigidbodyType2D.Dynamic;
@@ -133,28 +125,24 @@ public class Sim : MonoBehaviour
         Debug.Log(runPhysics ? "Simulation started" : "Simulation stopped");
     }
 
-    /// <summary>
-    /// Nuke bridge + car and go back to build mode.
-    /// </summary>
     public void ResetEverything()
     {
         StopAllCoroutines();
 
-        // Destroy RoadBars and BeamBars
+        goal.endReached = false;
+
         foreach (var r in FindObjectsOfType<RoadBar>())
             if (r != null) Destroy(r.gameObject);
 
         foreach (var b in FindObjectsOfType<BeamBar>())
             if (b != null) Destroy(b.gameObject);
 
-        // Destroy nodes (except non-destructible starter anchors)
         foreach (Point node in FindObjectsOfType<Point>())
         {
-            if (node != null && node.destructable)
+            if (node != null && node.destructable && !node.isAnchored)
                 Destroy(node.gameObject);
         }
 
-        // Reset car
         if (carInstance != null)
             Destroy(carInstance);
 
@@ -163,7 +151,6 @@ public class Sim : MonoBehaviour
         simulationRunning = false;
         SetSimulationState(false);
 
-        // Clean BarCreator node list to remove destroyed references
         foreach (var builder in FindObjectsOfType<BarCreator>())
             builder.CleanNodes();
 

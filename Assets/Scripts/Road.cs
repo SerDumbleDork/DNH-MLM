@@ -14,8 +14,8 @@ public class RoadBar : MonoBehaviour
     private BoxCollider2D box;
     private Transform colHolder;
 
-    private DistanceJoint2D jointA;
-    private DistanceJoint2D jointB;
+    [HideInInspector] public DistanceJoint2D jointA;
+    [HideInInspector] public DistanceJoint2D jointB;
 
     // Stress colors
     public Color normalColor = Color.white;

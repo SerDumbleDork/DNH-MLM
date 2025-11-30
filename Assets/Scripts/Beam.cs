@@ -11,8 +11,8 @@ public class BeamBar : MonoBehaviour
     private float baseY;
     private SpriteRenderer sr;
 
-    private DistanceJoint2D jointA;
-    private DistanceJoint2D jointB;
+    [HideInInspector] public DistanceJoint2D jointA;
+    [HideInInspector] public DistanceJoint2D jointB;
 
     // Stress colors
     public Color normalColor = Color.white;

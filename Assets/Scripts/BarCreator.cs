@@ -17,12 +17,13 @@ public class BarCreator : MonoBehaviour
     [HideInInspector] public enum Mode { Road, Beam }
     [HideInInspector] public Mode mode = Mode.Road;
 
-    // PREVIEW DATA
     private GameObject previewObj;
     private SpriteRenderer previewSprite;
 
     public bool aiControl = false;
     public Vector2 aiMousePos = Vector2.zero;
+
+    public PBTBridgeAIController ai;
 
     Vector2 GetMouseWorld()
     {
@@ -35,8 +36,12 @@ public class BarCreator : MonoBehaviour
 
     void Start()
     {
+        aiControl = false;
+
         foreach (var p in FindObjectsOfType<Point>())
             nodes.Add(p);
+
+            ai.StartCoroutine(ai.RunPBTLoop());
     }
 
     void Update()
@@ -68,6 +73,23 @@ public class BarCreator : MonoBehaviour
         // Preview update
         if (placing)
             UpdatePreview();
+    }
+
+    public Point GetNearestNode(Vector2 pos, float maxDist = 999f)
+    {
+        Point best = null;
+        float bestDist = maxDist;
+
+        foreach (var n in nodes)
+        {
+            float d = Vector2.Distance(n.rb.position, pos);
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = n;
+            }
+        }
+        return best;
     }
 
     public MonoBehaviour LeftClick()
@@ -171,11 +193,6 @@ public class BarCreator : MonoBehaviour
 
         previewObj = null;
     }
-
-
-    // --------------------------------------------------------------
-    // NODE CREATION / SNAPPING
-    // --------------------------------------------------------------
 
     Point CreateNode(Vector2 pos)
     {

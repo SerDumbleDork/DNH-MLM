@@ -5,8 +5,12 @@ public class Car : MonoBehaviour
     public float rollForce = 10f;
     public float maxSpeed = 3f;
 
+    public bool isGrounded = false;
+    public float groundedTime = 0f;
+
     Rigidbody2D rb;
     public float startX { get; private set; }
+
     public float DistanceTravelled
     {
         get
@@ -15,8 +19,6 @@ public class Car : MonoBehaviour
             return rb.position.x - startX;
         }
     }
-
-    bool grounded = false;
 
     void Awake()
     {
@@ -33,7 +35,10 @@ public class Car : MonoBehaviour
     {
         if (rb == null) return;
 
-        if (!grounded)
+        if (isGrounded)
+            groundedTime += Time.fixedDeltaTime;
+
+        if (!isGrounded)
             return;
 
         if (rb.angularVelocity > -maxSpeed * 50f)
@@ -45,14 +50,14 @@ public class Car : MonoBehaviour
 
     void OnCollisionStay2D(Collision2D collision)
     {
-        grounded = false;
+        isGrounded = false;
 
         for (int i = 0; i < collision.contactCount; i++)
         {
             Vector2 normal = collision.GetContact(i).normal;
             if (normal.y > 0.5f)
             {
-                grounded = true;
+                isGrounded = true;
                 break;
             }
         }
@@ -60,6 +65,6 @@ public class Car : MonoBehaviour
 
     void OnCollisionExit2D(Collision2D collision)
     {
-        grounded = false;
+        isGrounded = false;
     }
 }
