@@ -28,7 +28,7 @@ public class BridgePBTModel
     {
         lastFitness = fitness;
 
-        if (useBackprop && fitness > 0f)
+        if (useBackprop)
         {
             net.Train(anchors, genes, fitness, learningRate);
         }
@@ -42,9 +42,6 @@ public class BridgePBTModel
         learningRate     = better.learningRate;
         explorationNoise = better.explorationNoise;
         useBackprop      = better.useBackprop;
-
-        // Remove the reset — let lastFitness update after real evaluation
-        // lastFitness = 0f;
     }
 
     public void MutateHyperparameters()

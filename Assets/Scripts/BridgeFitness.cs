@@ -111,7 +111,7 @@ public static class BridgeFitness
 
         fitness += anchorConnections * 4f;
 
-        return Mathf.Clamp(fitness, -250f, 350f);
+        return fitness;
     }
 
     static bool IsAnchor(DistanceJoint2D j)

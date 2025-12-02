@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class Car : MonoBehaviour
 {
-    public float rollForce = 10f;
     public float maxSpeed = 3f;
 
     public bool isGrounded = false;
@@ -37,15 +36,14 @@ public class Car : MonoBehaviour
 
         if (isGrounded)
             groundedTime += Time.fixedDeltaTime;
-
-        if (!isGrounded)
+        else
             return;
 
-        if (rb.angularVelocity > -maxSpeed * 50f)
-            rb.AddTorque(-rollForce, ForceMode2D.Force);
+        Vector2 v = rb.linearVelocity;
+        v.x = maxSpeed;
+        rb.linearVelocity = v;
 
-        if (rb.linearVelocity.magnitude < maxSpeed)
-            rb.AddForce(Vector2.right * rollForce * 0.2f, ForceMode2D.Force);
+        rb.angularVelocity = 0f;
     }
 
     void OnCollisionStay2D(Collision2D collision)

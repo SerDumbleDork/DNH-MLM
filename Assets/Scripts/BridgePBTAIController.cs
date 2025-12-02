@@ -217,7 +217,8 @@ public class PBTBridgeAIController : MonoBehaviour
         string genText = "Generation: "+ pbtManager.generationIndex.ToString();
         GUI.Label(new Rect(boxRect.x + 10, boxRect.y + 10, boxRect.width, boxRect.height),genText, style2);
 
-        string fitnessText = $"Last Fitness: {lastEvaluatedFitness:F2}";
+        float shownFitness = Mathf.Clamp(lastEvaluatedFitness, -250f, 350f);
+        string fitnessText = $"Last Fitness: {shownFitness:F2}";
         Rect boxRect2 = new Rect(0, 0, 250, 50);
         GUIStyle style3 = new GUIStyle(GUI.skin.label);
         style3.fontSize = 18;
