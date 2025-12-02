@@ -46,6 +46,7 @@ public class BarCreator : MonoBehaviour
 
     void Update()
     {
+        /*
         // Can't build during simulation
         if (FindObjectOfType<Sim>()?.simulationRunning == true)
             return;
@@ -69,6 +70,7 @@ public class BarCreator : MonoBehaviour
             }
             UndoLast();
         }
+        */
 
         // Preview update
         if (placing)

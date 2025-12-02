@@ -80,7 +80,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 20
   m_Sprite: {fileID: 7482667652216324306, guid: 48e93eef0688c4a259cb0eddcd8661f7, type: 3}
   m_Color: {r: 0.509434, g: 0.33262107, b: 0.28595588, a: 1}
   m_FlipX: 0
@@ -112,7 +112,7 @@ MonoBehaviour:
   nodeB: {fileID: 0}
   jointA: {fileID: 0}
   jointB: {fileID: 0}
-  normalColor: {r: 0.6226415, g: 0.32089105, b: 0.20265219, a: 1}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
   stressColor: {r: 1, g: 0, b: 0, a: 1}
   breakForce: 1500
 --- !u!1 &2927878493093885616
