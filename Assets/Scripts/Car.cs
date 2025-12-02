@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Car : MonoBehaviour
 {
-    public float Speed = 3f;
+    public float maxSpeed = 6f;
 
     public bool isGrounded = false;
     public float groundedTime = 0f;
@@ -12,11 +12,7 @@ public class Car : MonoBehaviour
 
     public float DistanceTravelled
     {
-        get
-        {
-            if (rb == null) return 0f;
-            return rb.position.x - startX;
-        }
+        get { return rb.position.x - startX; }
     }
 
     void Awake()
@@ -26,45 +22,29 @@ public class Car : MonoBehaviour
 
     void Start()
     {
-        if (rb != null)
-            startX = rb.position.x;
+        startX = rb.position.x;
     }
 
     void FixedUpdate()
     {
         if (rb == null) return;
 
+        float speedX = isGrounded ? maxSpeed : 0f;
+
         if (isGrounded)
             groundedTime += Time.fixedDeltaTime;
-        else
-            return;
 
         Vector2 v = rb.linearVelocity;
-        v.x = Speed;
+        v.x = speedX;
         rb.linearVelocity = v;
-
-        if (!isGrounded)
-            Speed = 0f;
-
-        rb.angularVelocity = 0f;
     }
 
-    void OnCollisionStay2D(Collision2D collision)
+    void OnCollisionEnter2D(Collision2D col)
     {
-        isGrounded = false;
-
-        for (int i = 0; i < collision.contactCount; i++)
-        {
-            Vector2 normal = collision.GetContact(i).normal;
-            if (normal.y > 0.5f)
-            {
-                isGrounded = true;
-                break;
-            }
-        }
+        isGrounded = true;
     }
 
-    void OnCollisionExit2D(Collision2D collision)
+    void OnCollisionExit2D(Collision2D col)
     {
         isGrounded = false;
     }
