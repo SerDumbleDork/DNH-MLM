@@ -17,6 +17,12 @@ public class BridgePolicyNetwork
     const float CoordScaleX = 15f;
     const float CoordScaleY = 6f;
 
+    // Stored for training (last episode)
+    float[] lastInput;    // size = inputSize
+    float[] lastHidden;   // size = hiddenSize
+    float[] lastMu;       // size = outputSize (means)
+    float[] lastAction;   // size = outputSize (actual used actions)
+
     System.Random rng = new System.Random();
 
     public BridgePolicyNetwork(int genesPerBridge, int hidden)
@@ -56,15 +62,18 @@ public class BridgePolicyNetwork
         }
     }
 
-    float Tanh(float x)
-    {
-        return (float)System.Math.Tanh(x);
-    }
+    float Tanh(float x) => (float)System.Math.Tanh(x);
 
-    float[] Forward(float[] input, out float[] hidden)
+    float[] Forward(float[] input)
     {
-        hidden = new float[hiddenSize];
-        float[] output = new float[outputSize];
+        if (lastInput == null || lastInput.Length != inputSize)
+            lastInput = new float[inputSize];
+        if (lastHidden == null || lastHidden.Length != hiddenSize)
+            lastHidden = new float[hiddenSize];
+        if (lastMu == null || lastMu.Length != outputSize)
+            lastMu = new float[outputSize];
+
+        Array.Copy(input, lastInput, inputSize);
 
         for (int j = 0; j < hiddenSize; j++)
         {
@@ -73,7 +82,7 @@ public class BridgePolicyNetwork
             {
                 sum += w1[j, i] * input[i];
             }
-            hidden[j] = Mathf.Max(0f, sum);
+            lastHidden[j] = Mathf.Max(0f, sum);
         }
 
         for (int o = 0; o < outputSize; o++)
@@ -81,12 +90,12 @@ public class BridgePolicyNetwork
             float sum = b2[o];
             for (int j = 0; j < hiddenSize; j++)
             {
-                sum += w2[o, j] * hidden[j];
+                sum += w2[o, j] * lastHidden[j];
             }
-            output[o] = Tanh(sum);
+            lastMu[o] = Tanh(sum);
         }
 
-        return output;
+        return lastMu;
     }
 
     public BridgeGene[] GenerateGenes(Point[] anchors, float explorationNoise)
@@ -108,16 +117,19 @@ public class BridgePolicyNetwork
             a2.x, a2.y
         };
 
-        float[] hidden;
-        float[] raw = Forward(input, out hidden);
+        float[] mu = Forward(input);
 
-        if (explorationNoise > 0f)
+        if (lastAction == null || lastAction.Length != outputSize)
+            lastAction = new float[outputSize];
+
+        float sigma = Mathf.Max(0.001f, explorationNoise);
+
+        for (int i = 0; i < outputSize; i++)
         {
-            for (int i = 0; i < raw.Length; i++)
-            {
-                float n = UnityEngine.Random.Range(-explorationNoise, explorationNoise);
-                raw[i] = Tanh(raw[i] + n);
-            }
+            float eps = UnityEngine.Random.Range(-1f, 1f);
+            float a = mu[i] + eps * sigma;
+            a = Mathf.Clamp(a, -1f, 1f);
+            lastAction[i] = a;
         }
 
         BridgeGene[] genes = new BridgeGene[geneCount];
@@ -125,11 +137,11 @@ public class BridgePolicyNetwork
 
         for (int g = 0; g < geneCount; g++)
         {
-            float sxNorm = raw[idx++];
-            float syNorm = raw[idx++];
-            float exNorm = raw[idx++];
-            float eyNorm = raw[idx++];
-            float typeLogit = raw[idx++];
+            float sxNorm     = lastAction[idx++];
+            float syNorm     = lastAction[idx++];
+            float exNorm     = lastAction[idx++];
+            float eyNorm     = lastAction[idx++];
+            float typeLogit  = lastAction[idx++];
 
             Vector2 start = new Vector2(sxNorm * CoordScaleX, syNorm * CoordScaleY);
             Vector2 end   = new Vector2(exNorm * CoordScaleX, eyNorm * CoordScaleY);
@@ -139,9 +151,9 @@ public class BridgePolicyNetwork
 
             genes[g] = new BridgeGene
             {
-                start = start,
-                end   = end,
-                type  = type,
+                start  = start,
+                end    = end,
+                type   = type,
                 broken = false
             };
         }
@@ -151,7 +163,65 @@ public class BridgePolicyNetwork
 
     public void Train(Point[] anchors, BridgeGene[] genes, float fitness, float learningRate)
     {
-        // Placeholder for different training methods that aren't needed'
+        if (fitness <= 0f) return;
+        if (lastInput == null || lastHidden == null || lastMu == null || lastAction == null)
+            return;
+
+        float R = Mathf.Clamp(fitness, -500f, 500f);
+
+        float sigma = 0.3f;
+        float invSigma2 = 1.0f / (sigma * sigma + 1e-6f);
+
+        float[] dL_dmu = new float[outputSize];
+        float[] dL_dz2 = new float[outputSize];
+
+        for (int o = 0; o < outputSize; o++)
+        {
+            float a  = lastAction[o];
+            float mu = lastMu[o];
+
+            float gradLogPi_mu = (a - mu) * invSigma2;
+
+            dL_dmu[o] = -R * gradLogPi_mu;
+
+            float dmu_dz2 = 1f - mu * mu;
+            dL_dz2[o] = dL_dmu[o] * dmu_dz2;
+        }
+
+        float[] dL_dh = new float[hiddenSize];
+
+        for (int o = 0; o < outputSize; o++)
+        {
+            float grad = dL_dz2[o];
+
+            for (int j = 0; j < hiddenSize; j++)
+            {
+                float dw2 = grad * lastHidden[j];
+                w2[o, j] -= learningRate * dw2;
+
+                dL_dh[j] += grad * w2[o, j];
+            }
+
+            b2[o] -= learningRate * grad;
+        }
+
+        for (int j = 0; j < hiddenSize; j++)
+        {
+            if (lastHidden[j] <= 0f)
+            {
+                dL_dh[j] = 0f;
+            }
+
+            float grad_h = dL_dh[j];
+
+            for (int i = 0; i < inputSize; i++)
+            {
+                float dw1 = grad_h * lastInput[i];
+                w1[j, i] -= learningRate * dw1;
+            }
+
+            b1[j] -= learningRate * grad_h;
+        }
     }
 
     public void CopyWeightsFrom(BridgePolicyNetwork other)

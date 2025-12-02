@@ -7,93 +7,117 @@ public static class BridgeFitness
     {
         float fitness = 0f;
 
-        if (goal != null && goal.endReached)
-            fitness += 200f;
+        float maxDistance = 0f;
+        float startX = 0f;
 
-        float distance = 0f;
         if (cars != null)
         {
             foreach (var c in cars)
             {
                 if (c == null) continue;
-                distance = Mathf.Max(distance, c.DistanceTravelled);
+                maxDistance = Mathf.Max(maxDistance, c.DistanceTravelled);
+                startX = c.startX;
             }
         }
-        fitness += distance;
 
-        int connectedBars = 0;
-        int floatingBars = 0;
-        int brokenBars = 0;
-        int anchorConnections = 0;
-        int belowYCount = 0;
-
-        List<MonoBehaviour> bars = new List<MonoBehaviour>();
-        bars.AddRange(Object.FindObjectsOfType<RoadBar>());
-        bars.AddRange(Object.FindObjectsOfType<BeamBar>());
-
-        foreach (var b in bars)
+        float distNorm = 0f;
+        if (goal != null)
         {
-            DistanceJoint2D start = null;
-            DistanceJoint2D end = null;
-            Point nodeA = null;
-            Point nodeB = null;
+            float targetDist = goal.transform.position.x - startX;
+            if (targetDist > 0.1f)
+                distNorm = Mathf.Clamp01(maxDistance / targetDist);
+        }
+        else
+        {
+            distNorm = Mathf.Clamp01(maxDistance / 20f); 
+        }
 
-            if (b is RoadBar r)
-            {
-                start = r.jointA;
-                end = r.jointB;
-                nodeA = r.nodeA;
-                nodeB = r.nodeB;
-                if (r.geneReference != null && r.geneReference.broken)
-                    brokenBars++;
-            }
+        fitness += distNorm * 150f;
 
-            if (b is BeamBar beam)
-            {
-                start = beam.jointA;
-                end = beam.jointB;
-                nodeA = beam.nodeA;
-                nodeB = beam.nodeB;
-                if (beam.geneReference != null && beam.geneReference.broken)
-                    brokenBars++;
-            }
+        if (goal != null && goal.endReached)
+            fitness += 100f;
 
-            if (nodeA != null && nodeB != null)
-            {
-                Vector2 mid = (nodeA.rb.position + nodeB.rb.position) * 0.5f;
-                if (mid.y < -5f)
-                    belowYCount++;
-            }
+        int connectedBars     = 0;
+        int floatingBars      = 0;
+        int brokenBars        = 0;
+        int anchorConnections = 0;
 
-            bool connected = (start != null && end != null);
+        float totalSagPenalty = 0f;
+        float totalSlopePenalty = 0f;
+
+        var roadBars = Object.FindObjectsOfType<RoadBar>();
+        var beamBars = Object.FindObjectsOfType<BeamBar>();
+
+        foreach (var r in roadBars)
+        {
+            if (r == null || r.nodeA == null || r.nodeB == null) continue;
+
+            bool connected = (r.jointA != null && r.jointB != null);
             if (connected)
                 connectedBars++;
             else
                 floatingBars++;
 
-            if (connected)
-            {
-                if (IsJointOnAnchor(start) || IsJointOnAnchor(end))
-                    anchorConnections++;
-            }
+            if (r.geneReference != null && r.geneReference.broken)
+                brokenBars++;
+
+            Vector2 a = r.nodeA.rb.position;
+            Vector2 b = r.nodeB.rb.position;
+            Vector2 mid = (a + b) * 0.5f;
+
+            if (mid.y < 0f)
+                totalSagPenalty += (-mid.y) * 8f; 
+
+            float slope = Mathf.Abs(a.y - b.y);
+            totalSlopePenalty += slope * 4f;
+
+            if (IsAnchor(r.jointA) || IsAnchor(r.jointB))
+                anchorConnections++;
         }
 
-        fitness += connectedBars * 5f;
-        fitness -= floatingBars * 3f;
-        fitness += anchorConnections * 10f;
-        if (anchorConnections == 0)
-            fitness -= 50f;
-        fitness -= brokenBars * 15f;
-        fitness -= belowYCount * 20f;
+        foreach (var beam in beamBars)
+        {
+            if (beam == null || beam.nodeA == null || beam.nodeB == null) continue;
 
-        return fitness;
+            bool connected = (beam.jointA != null && beam.jointB != null);
+            if (connected)
+                connectedBars++;
+            else
+                floatingBars++;
+
+            if (beam.geneReference != null && beam.geneReference.broken)
+                brokenBars++;
+
+            Vector2 a = beam.nodeA.rb.position;
+            Vector2 b = beam.nodeB.rb.position;
+            Vector2 mid = (a + b) * 0.5f;
+
+            if (mid.y < 0f)
+                totalSagPenalty += (-mid.y) * 3f;
+
+            float slope = Mathf.Abs(a.y - b.y);
+            totalSlopePenalty += slope * 1.5f;
+
+            if (IsAnchor(beam.jointA) || IsAnchor(beam.jointB))
+                anchorConnections++;
+        }
+
+        fitness -= totalSagPenalty;
+        fitness -= totalSlopePenalty;
+
+        fitness -= brokenBars * 6f;
+        fitness += connectedBars * 1.5f;
+        fitness -= floatingBars * 1f;
+
+        fitness += anchorConnections * 4f;
+
+        return Mathf.Clamp(fitness, -250f, 350f);
     }
 
-    static bool IsJointOnAnchor(DistanceJoint2D j)
+    static bool IsAnchor(DistanceJoint2D j)
     {
         if (j == null) return false;
-        Point p = j.connectedBody?.GetComponent<Point>();
-        if (p == null) return false;
-        return p.isAnchored;
+        var p = j.connectedBody?.GetComponent<Point>();
+        return p != null && p.isAnchored;
     }
 }

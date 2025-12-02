@@ -1754,7 +1754,7 @@ MonoBehaviour:
   pbtManager: {fileID: 1272162597}
   goal: {fileID: 1981196549}
   simulationTime: 10
-  aiTimeScale: 10
+  aiTimeScale: 1
   aiTargetFrameRate: 60
   toggleKey: 102
 --- !u!4 &1628518934

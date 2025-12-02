@@ -16,7 +16,7 @@ public class BridgePBTModel
     {
         net = new BridgePolicyNetwork(genesPerBridge, hiddenSize);
         RandomizeHyperparameters();
-        MutateWeights(0.1f);
+        MutateWeights(0.01f);
     }
 
     public BridgeGene[] GenerateBridge(Point[] anchors)

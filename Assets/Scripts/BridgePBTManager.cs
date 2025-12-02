@@ -134,7 +134,7 @@ public class BridgePBTManager : MonoBehaviour
             BridgePBTModel parent = models[Random.Range(0, survivors)];
             models[i].CopyFrom(parent);
             models[i].MutateHyperparameters();
-            models[i].MutateWeights(0.05f);
+            models[i].MutateWeights(0.00f);
         }
 
         Debug.Log($"PBT: Generation {generationIndex} evolved. Best fitness = {models[0].lastFitness:F2}");
