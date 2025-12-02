@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Car : MonoBehaviour
 {
-    public float maxSpeed = 3f;
+    public float Speed = 3f;
 
     public bool isGrounded = false;
     public float groundedTime = 0f;
@@ -40,8 +40,11 @@ public class Car : MonoBehaviour
             return;
 
         Vector2 v = rb.linearVelocity;
-        v.x = maxSpeed;
+        v.x = Speed;
         rb.linearVelocity = v;
+
+        if (!isGrounded)
+            Speed = 0f;
 
         rb.angularVelocity = 0f;
     }
