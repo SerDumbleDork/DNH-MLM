@@ -1,5 +1,8 @@
 using UnityEngine;
+using System.Globalization;
+using System.Text;
 using System;
+using System.Collections.Generic;
 
 public class BridgePolicyNetwork
 {
@@ -279,5 +282,111 @@ public class BridgePolicyNetwork
             }
             b2[o] += UnityEngine.Random.Range(-scale, scale);
         }
+    }
+
+    public string SerializeWeights()
+    {
+        var sb = new StringBuilder();
+
+        void Append(float v)
+        {
+            if (sb.Length > 0) sb.Append(',');
+            sb.Append(v.ToString("R", CultureInfo.InvariantCulture));
+        }
+
+        // w1: [hiddenSize, inputSize]
+        for (int j = 0; j < hiddenSize; j++)
+            for (int i = 0; i < inputSize; i++)
+                Append(w1[j, i]);
+
+        // b1: [hiddenSize]
+        for (int j = 0; j < hiddenSize; j++)
+            Append(b1[j]);
+
+        // w2: [outputSize, hiddenSize]
+        for (int o = 0; o < outputSize; o++)
+            for (int j = 0; j < hiddenSize; j++)
+                Append(w2[o, j]);
+
+        // b2: [outputSize]
+        for (int o = 0; o < outputSize; o++)
+            Append(b2[o]);
+
+        return sb.ToString();
+    }
+
+    public void DeserializeWeights(string data)
+    {
+        if (string.IsNullOrEmpty(data))
+            return;
+
+        string[] parts = data.Split(',');
+        int idx = 0;
+
+        // w1
+        for (int j = 0; j < hiddenSize; j++)
+            for (int i = 0; i < inputSize; i++)
+                w1[j, i] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
+
+        // b1
+        for (int j = 0; j < hiddenSize; j++)
+            b1[j] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
+
+        // w2
+        for (int o = 0; o < outputSize; o++)
+            for (int j = 0; j < hiddenSize; j++)
+                w2[o, j] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
+
+        // b2
+        for (int o = 0; o < outputSize; o++)
+            b2[o] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
+    }
+
+    public float[] GetAllWeights()
+    {
+        List<float> list = new List<float>();
+
+        // w1 (hiddenSize x inputSize)
+        for (int j = 0; j < hiddenSize; j++)
+            for (int i = 0; i < inputSize; i++)
+                list.Add(w1[j, i]);
+
+        // b1
+        for (int j = 0; j < hiddenSize; j++)
+            list.Add(b1[j]);
+
+        // w2 (outputSize x hiddenSize)
+        for (int o = 0; o < outputSize; o++)
+            for (int j = 0; j < hiddenSize; j++)
+                list.Add(w2[o, j]);
+
+        // b2
+        for (int o = 0; o < outputSize; o++)
+            list.Add(b2[o]);
+
+        return list.ToArray();
+    }
+
+    public void SetAllWeights(float[] arr)
+    {
+        int idx = 0;
+
+        // w1
+        for (int j = 0; j < hiddenSize; j++)
+            for (int i = 0; i < inputSize; i++)
+                w1[j, i] = arr[idx++];
+
+        // b1
+        for (int j = 0; j < hiddenSize; j++)
+            b1[j] = arr[idx++];
+
+        // w2
+        for (int o = 0; o < outputSize; o++)
+            for (int j = 0; j < hiddenSize; j++)
+                w2[o, j] = arr[idx++];
+
+        // b2
+        for (int o = 0; o < outputSize; o++)
+            b2[o] = arr[idx++];
     }
 }

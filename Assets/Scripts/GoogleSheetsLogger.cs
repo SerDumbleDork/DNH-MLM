@@ -8,21 +8,23 @@ public static class GoogleSheetsLogger
     private static string webAppUrl = "https://script.google.com/macros/s/AKfycbwurT0M2gtmLYB8YcOCnBr5VlclS0q1ff-ivmoeR5bpqmofEIUn2DPmhTO1A6K5tk-7wQ/exec";
 
     public static IEnumerator LogEpisode(
-        int generation,
+        int globalGeneration,
         int modelIndex,
         float fitness,
         float learningRate,
         float noise,
+        string weightsString,
         BridgeGene[] genes)
     {
         Dictionary<string, object> payload = new Dictionary<string, object>();
-
-        payload["globalGeneration"] = generation;
+        payload["globalGeneration"] = globalGeneration;
         payload["modelIndex"] = modelIndex;
         payload["fitness"] = fitness;
         payload["learningRate"] = learningRate;
         payload["noise"] = noise;
+        payload["weights"] = weightsString;
 
+        // Serialize genes properly
         List<object> geneList = new List<object>();
         foreach (var g in genes)
         {
@@ -34,7 +36,6 @@ public static class GoogleSheetsLogger
             d["type"] = g.type.ToString();
             geneList.Add(d);
         }
-
         payload["rawGenes"] = geneList;
 
         string json = MiniJSON.Json.Serialize(payload);
@@ -48,6 +49,7 @@ public static class GoogleSheetsLogger
 
         yield return request.SendWebRequest();
 
-        Debug.Log("SheetsLogger status: " + request.responseCode);
+        Debug.Log("SheetsLogger: HTTP " + request.responseCode);
+        Debug.Log("SheetsLogger sent JSON: " + json);
     }
 }

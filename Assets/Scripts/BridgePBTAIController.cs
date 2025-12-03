@@ -136,10 +136,17 @@ public class PBTBridgeAIController : MonoBehaviour
             fitness,
             model.learningRate,
             model.explorationNoise,
+            model.ExportWeightsString(),
             genes
         ));
 
         Debug.Log($"PBT: Model fitness = {fitness:F2}");
+
+        WeightStorage.Save(
+            $"model_{pbtManager.currentModelIndex}_gen_{pbtManager.generationIndex}.txt",
+            model.ExportWeightsString()
+        );
+
     }
 
     void AIClick(BridgeGene gene)

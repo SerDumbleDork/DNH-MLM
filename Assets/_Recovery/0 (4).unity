@@ -2201,8 +2201,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589eb84951b69504f8c163064b4c2d08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BridgePBTManager
-  populationSize: 20
-  genesPerBridge: 20
+  populationSize: 12
+  genesPerBridge: 10
   hiddenSize: 48
   anchorPoints:
   - {fileID: 1627555234}

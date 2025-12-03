@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [System.Serializable]
 public class BridgePBTModel
@@ -57,4 +57,55 @@ public class BridgePBTModel
         explorationNoise = Random.Range(0.05f, 0.15f);
     }
 
+    public string ExportWeightsString()
+    {
+        float[] w = net.GetAllWeights();
+        byte[] bytes = FloatArrayToBytes(w);
+        return System.Convert.ToBase64String(bytes);
+    }
+
+    public void ImportWeightsString(string base64)
+    {
+        if (string.IsNullOrEmpty(base64)) return;
+
+        try
+        {
+            byte[] bytes = System.Convert.FromBase64String(base64);
+            float[] w = BytesToFloatArray(bytes);
+            net.SetAllWeights(w);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning("ImportWeightsString failed: " + ex.Message);
+        }
+    }
+
+    // Converts float[] → byte[] using IEEE 754
+    private byte[] FloatArrayToBytes(float[] arr)
+    {
+        byte[] result = new byte[arr.Length * 4];
+        for (int i = 0; i < arr.Length; i++)
+        {
+            System.Buffer.BlockCopy(
+                System.BitConverter.GetBytes(arr[i]),
+                0,
+                result,
+                i * 4,
+                4
+            );
+        }
+        return result;
+    }
+
+    // Converts byte[] → float[]
+    private float[] BytesToFloatArray(byte[] bytes)
+    {
+        int count = bytes.Length / 4;
+        float[] result = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            result[i] = System.BitConverter.ToSingle(bytes, i * 4);
+        }
+        return result;
+    }
 }

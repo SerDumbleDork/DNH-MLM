@@ -92,10 +92,11 @@ public class BridgePBTManager : MonoBehaviour
             foreach (var entry in rows)
             {
                 string rawGen     = entry.ContainsKey("globalGeneration") ? entry["globalGeneration"]?.ToString() : "0";
-                string rawModel   = entry.ContainsKey("modelIndex") ? entry["modelIndex"]?.ToString() : "0";
-                string rawFitness = entry.ContainsKey("fitness") ? entry["fitness"]?.ToString() : "0";
-                string rawLR      = entry.ContainsKey("learningRate") ? entry["learningRate"]?.ToString() : "0";
-                string rawNoise   = entry.ContainsKey("noise") ? entry["noise"]?.ToString() : "0";
+                string rawModel   = entry.ContainsKey("modelIndex")       ? entry["modelIndex"]?.ToString()      : "0";
+                string rawFitness = entry.ContainsKey("fitness")          ? entry["fitness"]?.ToString()         : "0";
+                string rawLR      = entry.ContainsKey("learningRate")     ? entry["learningRate"]?.ToString()    : "0.0003";
+                string rawNoise   = entry.ContainsKey("noise")            ? entry["noise"]?.ToString()           : "0.3";
+                string rawWeights = entry.ContainsKey("weights")          ? entry["weights"]?.ToString()         : "";
 
                 Debug.Log($"Row => Gen:'{rawGen}', Model:'{rawModel}', Fit:'{rawFitness}', LR:'{rawLR}', Noise:'{rawNoise}'");
 
@@ -110,34 +111,70 @@ public class BridgePBTManager : MonoBehaviour
 
                 if (modelIndex < models.Count)
                 {
-                    models[modelIndex].learningRate     = lr;
-                    models[modelIndex].explorationNoise = noise;
-                    models[modelIndex].lastFitness      = fitness;
+                    var m = models[modelIndex];
+
+                    m.learningRate     = lr;
+                    m.explorationNoise = noise;
+                    m.lastFitness      = fitness;
+
+                    // Import weights (if saved)
+                    if (!string.IsNullOrEmpty(rawWeights))
+                    {
+                        m.ImportWeightsString(rawWeights);
+                    }
                 }
             }
 
             Debug.Log("Population restored from Google Sheets.");
             Debug.Log("Global Generation now: " + globalGeneration);
         });
+
+        for (int i = 0; i < models.Count; i++)
+        {
+            string file = $"model_{i}_gen_{globalGeneration}.txt";
+            string weights = WeightStorage.Load(file);
+            if (!string.IsNullOrEmpty(weights))
+            {
+                models[i].ImportWeightsString(weights);
+                Debug.Log($"Loaded local weights for model {i}");
+            }
+        }
     }
 
-    void EvolvePopulation()
+    public void EvolvePopulation()
     {
-        if (models == null || models.Count == 0) return;
-
         models.Sort((a, b) => b.lastFitness.CompareTo(a.lastFitness));
 
-        int survivors = Mathf.Max(1, populationSize / 2);
+        BridgePBTModel elite1 = CloneModel(models[0]);
+        BridgePBTModel elite2 = CloneModel(models[1]);
 
-        for (int i = survivors; i < populationSize; i++)
+        BridgePBTModel[] newPop = new BridgePBTModel[populationSize];
+
+        newPop[0] = elite1;
+        newPop[1] = elite2;
+
+        for (int i = 2; i < populationSize; i++)
         {
-            BridgePBTModel parent = models[Random.Range(0, survivors)];
-            models[i].CopyFrom(parent);
-            models[i].MutateHyperparameters();
-            models[i].MutateWeights(0.00f);
+            int parentIndex = Random.Range(0, populationSize / 2);
+
+            BridgePBTModel child = CloneModel(models[parentIndex]);
+
+            child.MutateHyperparameters();
+            child.MutateWeights(child.explorationNoise);
+
+            newPop[i] = child;
         }
 
-        Debug.Log($"PBT: Generation {generationIndex} evolved. Best fitness = {models[0].lastFitness:F2}");
+        models = new List<BridgePBTModel>(newPop);
+
+        generationIndex++;
+    }
+
+    private BridgePBTModel CloneModel(BridgePBTModel src)
+    {
+        BridgePBTModel m = new BridgePBTModel(genesPerBridge, hiddenSize);
+        m.CopyFrom(src);
+        return m;
     }
 }
 

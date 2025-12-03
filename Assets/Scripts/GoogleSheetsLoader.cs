@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MiniJSON;
@@ -22,14 +22,48 @@ public static class GoogleSheetsLoader
 
         string json = request.downloadHandler.text;
 
-        var list = Json.Deserialize(json) as List<object>;
-        var result = new List<Dictionary<string, object>>();
-
-        foreach (var item in list)
+        var parsed = Json.Deserialize(json);
+        List<object> rawList = null;
+        if (parsed is List<object> directList)
         {
-            result.Add(item as Dictionary<string, object>);
+            rawList = directList;
+        }
+        else if (parsed is Dictionary<string, object> dict)
+        {
+            foreach (var kv in dict)
+            {
+                if (kv.Value is List<object> innerList)
+                {
+                    rawList = innerList;
+                    break;
+                }
+            }
+
+            if (rawList == null)
+            {                
+                Debug.LogError("SheetsLoader Error: JSON dictionary did not contain a list.");
+
+
+                callback(null);
+                yield break;
+            }                
+        }
+        else
+        {
+            Debug.LogError("SheetsLoader Error: JSON was neither a list nor dictionary.");
+            callback(null);
+            yield break;
+        }
+        List<Dictionary<string, object>> rows = new List<Dictionary<string, object>>();
+
+        foreach (var item in rawList)
+        {
+            if (item is Dictionary<string, object> rowDict)
+            {
+                rows.Add(rowDict);
+            }
         }
 
-        callback(result);
+        callback(rows);
     }
 }
