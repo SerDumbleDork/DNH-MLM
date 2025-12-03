@@ -132,8 +132,8 @@ public class AIController : MonoBehaviour
     {
         if (bc == null) return;
 
-        Point startNode = bc.GetNearestNode(gene.start);
-        Point endNode   = bc.GetNearestNode(gene.end);
+        Point startNode = bc.GetNearestOrCreateNode(gene.start);
+        Point endNode   = bc.GetNearestOrCreateNode(gene.end);
 
         if (startNode == null) return;
         if (endNode == null) return;

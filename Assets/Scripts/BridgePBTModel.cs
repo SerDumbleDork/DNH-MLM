@@ -4,11 +4,8 @@ using UnityEngine;
 public class BridgePBTModel
 {
     public BridgePolicyNetwork net;
-
-    // Hyperparameters (mutated by PBT)
     public float learningRate;
     public float explorationNoise;
-
     public float lastFitness;
     public bool useBackprop = true;
 
@@ -26,31 +23,27 @@ public class BridgePBTModel
 
     public void Train(Point[] anchors, BridgeGene[] genes, float fitness)
     {
-        lastFitness = fitness;
-
-        if (useBackprop)
-        {
-            net.Train(anchors, genes, fitness, learningRate);
-        }
+        float R = fitness;
+        net.Train(anchors, genes, R, learningRate);
     }
 
     public void CopyFrom(BridgePBTModel better)
     {
-        if (better == null) return;
-
         net.CopyWeightsFrom(better.net);
-        learningRate     = better.learningRate;
+        learningRate = better.learningRate;
         explorationNoise = better.explorationNoise;
-        useBackprop      = better.useBackprop;
+        useBackprop = better.useBackprop;
+        lastFitness = 0f;
     }
 
     public void MutateHyperparameters()
     {
         learningRate *= Random.Range(0.8f, 1.2f);
-        learningRate = Mathf.Clamp(learningRate, 0.00001f, 0.0015f);
+        learningRate = Mathf.Clamp(learningRate, 0.00001f, 0.002f);
 
-        explorationNoise *= Random.Range(0.8f, 1.2f);
-        explorationNoise = Mathf.Clamp(explorationNoise, 0.05f, 1.0f);
+        explorationNoise *= Random.Range(0.8f, 1.3f);
+        explorationNoise = Mathf.Clamp(explorationNoise, 0.02f, 0.20f);
+
     }
 
     public void MutateWeights(float scale)
@@ -60,7 +53,8 @@ public class BridgePBTModel
 
     void RandomizeHyperparameters()
     {
-        learningRate     = Random.Range(0.0001f, 0.001f);
-        explorationNoise = Random.Range(0.1f, 0.5f);
+        learningRate = Random.Range(0.002f, 0.02f);
+        explorationNoise = Random.Range(0.05f, 0.15f);
     }
+
 }

@@ -14,8 +14,8 @@ public class BridgePolicyNetwork
 
     int outputSize;
 
-    const float CoordScaleX = 15f;
-    const float CoordScaleY = 6f;
+    const float CoordX = 30f;
+    const float CoordY = 10f;
 
     // Stored for training (last episode)
     float[] lastInput;    // size = inputSize
@@ -100,12 +100,6 @@ public class BridgePolicyNetwork
 
     public BridgeGene[] GenerateGenes(Point[] anchors, float explorationNoise)
     {
-        if (anchors == null || anchors.Length < 3)
-        {
-            Debug.LogWarning("BridgePolicyNetwork.GenerateGenes: need 3 anchors.");
-            return new BridgeGene[0];
-        }
-
         Vector2 a0 = anchors[0].rb.position;
         Vector2 a1 = anchors[1].rb.position;
         Vector2 a2 = anchors[2].rb.position;
@@ -122,29 +116,59 @@ public class BridgePolicyNetwork
         if (lastAction == null || lastAction.Length != outputSize)
             lastAction = new float[outputSize];
 
-        float sigma = Mathf.Max(0.001f, explorationNoise);
+        float sigma = Mathf.Clamp(explorationNoise, 0.001f, 0.2f);
 
         for (int i = 0; i < outputSize; i++)
         {
             float eps = UnityEngine.Random.Range(-1f, 1f);
             float a = mu[i] + eps * sigma;
-            a = Mathf.Clamp(a, -1f, 1f);
-            lastAction[i] = a;
+            lastAction[i] = Mathf.Clamp(a, -1f, 1f);
         }
 
         BridgeGene[] genes = new BridgeGene[geneCount];
         int idx = 0;
 
+        float leftX  = Mathf.Min(a0.x, Mathf.Min(a1.x, a2.x));
+        float rightX = Mathf.Max(a0.x, Mathf.Max(a1.x, a2.x));
+
+        float minX = leftX - 2f;
+        float maxX = rightX + 2f;
+
+        float minY = -2f;
+        float maxY = 6f;
+
+        float maxLength = 5f;
+
         for (int g = 0; g < geneCount; g++)
         {
-            float sxNorm     = lastAction[idx++];
-            float syNorm     = lastAction[idx++];
-            float exNorm     = lastAction[idx++];
-            float eyNorm     = lastAction[idx++];
-            float typeLogit  = lastAction[idx++];
+            if (idx + 4 >= outputSize)
+                break;
 
-            Vector2 start = new Vector2(sxNorm * CoordScaleX, syNorm * CoordScaleY);
-            Vector2 end   = new Vector2(exNorm * CoordScaleX, eyNorm * CoordScaleY);
+            float sxNorm     = lastAction[idx++]; // start x [-1,1]
+            float syNorm     = lastAction[idx++]; // start y [-1,1]
+            float angleNorm  = lastAction[idx++]; // angle [-1,1]
+            float lengthNorm = lastAction[idx++]; // length [-1,1]
+            float typeLogit  = lastAction[idx++]; // type
+
+            float sx01 = (sxNorm + 1f) * 0.5f;
+            float sy01 = (syNorm + 1f) * 0.5f;
+
+            Vector2 start = new Vector2(
+                Mathf.Lerp(minX, maxX, sx01),
+                Mathf.Lerp(minY, maxY, sy01)
+            );
+
+            float angle = angleNorm * Mathf.PI;
+            Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+
+            if (dir.sqrMagnitude < 0.0001f)
+                dir = Vector2.right;
+
+            dir.Normalize();
+
+            float length = Mathf.Clamp01(Mathf.Abs(lengthNorm)) * maxLength;
+
+            Vector2 end = start + dir * length;
 
             AIController.BarType type =
                 (typeLogit > 0f ? AIController.BarType.Road : AIController.BarType.Beam);
@@ -167,7 +191,7 @@ public class BridgePolicyNetwork
         if (lastInput == null || lastHidden == null || lastMu == null || lastAction == null)
             return;
 
-        float R = Mathf.Clamp(fitness, -500f, 500f);
+        float R = fitness;
 
         float sigma = 0.3f;
         float invSigma2 = 1.0f / (sigma * sigma + 1e-6f);

@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26dd8a0a500da1041b9c8a48be12a659, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  maxSpeed: 6
+  maxSpeed: 12
   isGrounded: 0
   groundedTime: 0
 --- !u!70 &69236547241594359

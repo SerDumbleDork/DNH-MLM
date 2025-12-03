@@ -8,6 +8,7 @@ public class PBTBridgeAIController : MonoBehaviour
     public Sim sim;
     public BridgePBTManager pbtManager;
     public Goal goal;
+    public Checkpoint checkpoint;
     private float lastEvaluatedFitness = 0f;
 
     [Header("Timing")]
@@ -123,7 +124,7 @@ public class PBTBridgeAIController : MonoBehaviour
         sim.SetSimulationState(false);
 
         Car[] cars = FindObjectsOfType<Car>();
-        float fitness = BridgeFitness.Evaluate(cars, genes, goal, bc);
+        float fitness = BridgeFitness.Evaluate(cars, genes, goal, checkpoint, bc);
 
         model.Train(anchors, genes, fitness);
 

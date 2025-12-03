@@ -5,7 +5,7 @@ public class BridgePBTManager : MonoBehaviour
 {
     [Header("Population Settings")]
     public int populationSize = 12;
-    public int genesPerBridge = 24;
+    public int genesPerBridge = 10;
     public int hiddenSize     = 48;
 
     [Header("Anchors (drag 3 Point objects here)")]

@@ -77,21 +77,17 @@ public class BarCreator : MonoBehaviour
             UpdatePreview();
     }
 
-    public Point GetNearestNode(Vector2 pos, float maxDist = 999f)
+    public void BeginAIMode(Vector2 startPos, bool isRoad)
     {
-        Point best = null;
-        float bestDist = maxDist;
+        aiMousePos = startPos;
+        mode = isRoad ? Mode.Road : Mode.Beam;
+        LeftClick();
+    }
 
-        foreach (var n in nodes)
-        {
-            float d = Vector2.Distance(n.rb.position, pos);
-            if (d < bestDist)
-            {
-                bestDist = d;
-                best = n;
-            }
-        }
-        return best;
+    public void CompleteAIMode(Vector2 endPos)
+    {
+        aiMousePos = endPos;
+        LeftClick();
     }
 
     public MonoBehaviour LeftClick()
@@ -279,5 +275,44 @@ public class BarCreator : MonoBehaviour
     {
         nodes.RemoveAll(n => n == null);
     }
+    
+    public Vector2 GetNearestNodePosition(Vector2 pos)
+    {
+        float bestDist = float.MaxValue;
+        Vector2 bestPos = pos;
 
+        foreach (var n in nodes)
+        {
+            float d = (n.rb.position - pos).sqrMagnitude;
+            if (d < bestDist)
+            {
+                bestDist = d;
+                bestPos = n.rb.position;
+            }
+        }
+
+        return bestPos;
+    }
+
+    public Point GetNearestOrCreateNode(Vector2 pos)
+    {
+        Point best = null;
+        float bestDist = float.MaxValue;
+
+        foreach (var n in nodes)
+        {
+            if (n == null) continue;
+
+            float d = (n.rb.position - pos).sqrMagnitude;
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = n;
+            }
+        }
+        if (best != null && bestDist <= (snapRadius * snapRadius))
+            return best;
+
+        return CreateNode(pos);
+    }
 }
