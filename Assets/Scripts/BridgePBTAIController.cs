@@ -99,7 +99,21 @@ public class PBTBridgeAIController : MonoBehaviour
         yield return null;
 
         Point[] anchors = pbtManager.anchorPoints;
-        BridgeGene[] genes = model.GenerateBridge(anchors);
+        BridgeGene[] genes = model.net.GenerateGenesSequential(
+            anchors,
+            bc,
+            goal,
+            model.explorationNoise
+        );
+
+        if (genes != null)
+        {
+            for (int i = 0; i < genes.Length; i++)
+            {
+                AIClick(genes[i]);
+                yield return null;
+            }
+        }
 
         if (genes != null)
         {
@@ -126,7 +140,7 @@ public class PBTBridgeAIController : MonoBehaviour
         Car[] cars = FindObjectsOfType<Car>();
         float fitness = BridgeFitness.Evaluate(cars, genes, goal, checkpoint, bc);
 
-        model.Train(anchors, genes, fitness);
+        model.Train(fitness);
 
         lastEvaluatedFitness = fitness;
 
@@ -205,8 +219,7 @@ public class PBTBridgeAIController : MonoBehaviour
 
         string text =
             "PBT MODE RUNNING\n" +
-            $"Model index: {pbtManager.currentModelIndex + 1} / {pbtManager.populationSize}\n" +
-            $"Brains: {model.learningRate.ToString("F6")}  Mutation: {model.explorationNoise:F2}%";
+            $"Model index: {pbtManager.currentModelIndex + 1} / {pbtManager.populationSize}\n";
 
         GUIStyle style = new GUIStyle(GUI.skin.label);
         style.fontSize = 18;

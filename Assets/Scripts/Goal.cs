@@ -11,10 +11,6 @@ public class Goal : MonoBehaviour
             endReached = true;
             Debug.Log("Car crossed bridge successfully!");
         }
-        else
-        {
-            endReached = false;
-        }
     }
 }
 

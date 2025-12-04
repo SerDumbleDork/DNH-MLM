@@ -1,7 +1,5 @@
 using UnityEngine;
 using System;
-using System.Globalization;
-using System.Text;
 using System.Collections.Generic;
 
 public class BridgePolicyNetwork
@@ -11,27 +9,29 @@ public class BridgePolicyNetwork
     int inputSize;
 
     float[,] w1;
-    float[] b1;
+    float[]  b1;
     float[,] w2;
-    float[] b2;
+    float[]  b2;
 
     int outputSize;
-
-    const float CoordX = 30f;
-    const float CoordY = 10f;
 
     float[] lastInput;
     float[] lastHidden;
     float[] lastMu;
     float[] lastAction;
 
-    System.Random rng = new System.Random();
+    static float baseline = 0f;
+
+    public List<float[]> obsList  = new List<float[]>();
+    public List<float[]> muList   = new List<float[]>();
+    public List<float[]> actList  = new List<float[]>();
+    public List<float[]> hidList  = new List<float[]>();
 
     public BridgePolicyNetwork(int genesPerBridge, int hidden)
     {
         geneCount  = genesPerBridge;
         hiddenSize = hidden;
-        inputSize  = 6;
+        inputSize  = 20;
         outputSize = geneCount * 5;
 
         w1 = new float[hiddenSize, inputSize];
@@ -60,16 +60,19 @@ public class BridgePolicyNetwork
         }
     }
 
+    void EnsureArray(ref float[] arr, int size)
+    {
+        if (arr == null || arr.Length != size)
+            arr = new float[size];
+    }
+
     float Tanh(float x) => (float)Math.Tanh(x);
 
     float[] Forward(float[] input)
     {
-        if (lastInput == null || lastInput.Length != inputSize)
-            lastInput = new float[inputSize];
-        if (lastHidden == null || lastHidden.Length != hiddenSize)
-            lastHidden = new float[hiddenSize];
-        if (lastMu == null || lastMu.Length != outputSize)
-            lastMu = new float[outputSize];
+        EnsureArray(ref lastInput,  inputSize);
+        EnsureArray(ref lastHidden, hiddenSize);
+        EnsureArray(ref lastMu,     outputSize);
 
         Array.Copy(input, lastInput, inputSize);
 
@@ -109,8 +112,7 @@ public class BridgePolicyNetwork
 
         float[] mu = Forward(input);
 
-        if (lastAction == null || lastAction.Length != outputSize)
-            lastAction = new float[outputSize];
+        EnsureArray(ref lastAction, outputSize);
 
         float sigma = Mathf.Clamp(explorationNoise, 0.001f, 0.2f);
 
@@ -185,64 +187,98 @@ public class BridgePolicyNetwork
         return genes;
     }
 
-    public void Train(Point[] anchors, BridgeGene[] genes, float fitness, float learningRate)
+    public void Train(
+        List<float[]> obsListParam,
+        List<float[]> muListParam,
+        List<float[]> actionListParam,
+        List<float[]> hiddenListParam,
+        float returnR,
+        float learningRate,
+        float sigma
+    )
     {
-        if (fitness <= 0f) return;
-        if (lastInput == null || lastHidden == null || lastMu == null || lastAction == null)
+        if (obsListParam == null || muListParam == null ||
+            actionListParam == null || hiddenListParam == null)
             return;
 
-        float R = fitness;
+        int T = obsListParam.Count;
+        if (T == 0) return;
 
-        float sigma = 0.3f;
+        baseline = baseline * 0.9f + returnR * 0.1f;
+        float advantage = returnR - baseline;
+
         float invSigma2 = 1f / (sigma * sigma + 1e-6f);
 
-        float[] dL_dmu = new float[outputSize];
-        float[] dL_dz2 = new float[outputSize];
+        float[,] dW2 = new float[outputSize, hiddenSize];
+        float[]  dB2 = new float[outputSize];
 
-        for (int o = 0; o < outputSize; o++)
+        float[,] dW1 = new float[hiddenSize, inputSize];
+        float[]  dB1 = new float[hiddenSize];
+
+        for (int t = 0; t < T; t++)
         {
-            float a  = lastAction[o];
-            float mu = lastMu[o];
+            float[] mu     = muListParam[t];
+            float[] action = actionListParam[t];
+            float[] hid    = hiddenListParam[t];
+            float[] inp    = obsListParam[t];
 
-            float gradLogPi_mu = (a - mu) * invSigma2;
+            float[] dL_dz2 = new float[outputSize];
 
-            dL_dmu[o] = -R * gradLogPi_mu;
+            for (int o = 0; o < outputSize; o++)
+            {
+                float a = action[o];
+                float m = mu[o];
 
-            float dmu_dz2 = 1f - mu * mu;
-            dL_dz2[o] = dL_dmu[o] * dmu_dz2;
-        }
+                float gradLogPi = (a - m) * invSigma2;
+                float dL_dmu = advantage * gradLogPi;
 
-        float[] dL_dh = new float[hiddenSize];
+                float dz = (1f - m * m);
+                dL_dz2[o] = dL_dmu * dz;
+            }
 
-        for (int o = 0; o < outputSize; o++)
-        {
-            float grad = dL_dz2[o];
+            float[] dL_dh = new float[hiddenSize];
+
+            for (int o = 0; o < outputSize; o++)
+            {
+                float grad = dL_dz2[o];
+
+                for (int j = 0; j < hiddenSize; j++)
+                {
+                    dW2[o, j] += grad * hid[j];
+                    dL_dh[j]  += grad * w2[o, j];
+                }
+
+                dB2[o] += grad;
+            }
 
             for (int j = 0; j < hiddenSize; j++)
             {
-                float dw2 = grad * lastHidden[j];
-                w2[o, j] -= learningRate * dw2;
+                float h = hid[j];
+                if (h <= 0f) continue;
 
-                dL_dh[j] += grad * w2[o, j];
+                float grad_h = dL_dh[j];
+
+                for (int i = 0; i < inputSize; i++)
+                    dW1[j, i] += grad_h * inp[i];
+
+                dB1[j] += grad_h;
             }
+        }
 
-            b2[o] -= learningRate * grad;
+        for (int o = 0; o < outputSize; o++)
+        {
+            for (int j = 0; j < hiddenSize; j++)
+                w2[o, j] -= learningRate * dW2[o, j];
+
+            b2[o] -= learningRate * dB2[o];
         }
 
         for (int j = 0; j < hiddenSize; j++)
         {
-            if (lastHidden[j] <= 0f)
-                dL_dh[j] = 0f;
-
-            float grad_h = dL_dh[j];
-
             for (int i = 0; i < inputSize; i++)
-            {
-                float dw1 = grad_h * lastInput[i];
-                w1[j, i] -= learningRate * dw1;
-            }
+                w1[j, i] -= learningRate * dW1[j, i];
 
-            b1[j] -= learningRate * grad_h;
+            b1[j] -= learningRate * dB1[j];
         }
     }
 
@@ -279,7 +315,11 @@ public class BridgePolicyNetwork
 
     public float[] GetAllWeights()
     {
-        List<float> list = new List<float>();
+        int total =
+            w1.Length + b1.Length +
+            w2.Length + b2.Length;
+
+        var list = new List<float>(total);
 
         foreach (float v in w1) list.Add(v);
         foreach (float v in b1) list.Add(v);
@@ -306,5 +346,167 @@ public class BridgePolicyNetwork
 
         for (int o = 0; o < outputSize; o++)
             b2[o] = arr[idx++];
+    }
+
+    public BridgeGene[] GenerateGenesSequential(
+        Point[] anchors,
+        BarCreator bc,
+        Goal goal,
+        float explorationNoise
+    )
+    {
+        int totalBars = geneCount;
+        BridgeGene[] genes = new BridgeGene[totalBars];
+
+        Point lastEnd = anchors[0];
+        bool lastSuccess = true;
+        int brokenBars = 0;
+        float carProg = 0f;
+
+        for (int g = 0; g < totalBars; g++)
+        {
+            float[] obs = BridgeObservation.Build(
+                anchors,
+                lastEnd,
+                g,
+                totalBars,
+                carProg,
+                (float)brokenBars / 20f,
+                lastSuccess,
+                goal,
+                bc
+            );
+
+            float[] mu = Forward(obs);
+            float[] a  = SampleAction(mu, explorationNoise);
+
+            obsList.Add((float[])obs.Clone());
+
+            float[] muShort = new float[5];
+            Array.Copy(mu, 0, muShort, 0, 5);
+            muList.Add(muShort);
+
+            actList.Add((float[])a.Clone());
+            hidList.Add((float[])lastHidden.Clone());
+
+            float sxNorm     = a[0];
+            float syNorm     = a[1];
+            float angleNorm  = a[2];
+            float lengthNorm = a[3];
+            float typeLogit  = a[4];
+
+            // Forced start logic
+            Vector2 start;
+
+            if (g == 0)
+            {
+                // Always start at anchor 0
+                start = anchors[0].rb.position;
+            }
+            else if (g == 1)
+            {
+                // Force bar 1 to extend from bar 0’s end
+                start = lastEnd.rb.position;
+            }
+            else
+            {
+                // Mostly continue from lastEnd
+                if (UnityEngine.Random.value < 0.70f)
+                {
+                    start = lastEnd.rb.position;
+                }
+                else
+                {
+                    // Sometimes allow branching to create supports
+                    start = DecodeStart(bc, sxNorm, syNorm);
+                }
+            }
+
+            Vector2 end = DecodeEnd(start, angleNorm, lengthNorm);
+
+            AIController.BarType type =
+                (typeLogit > 0f ? AIController.BarType.Road : AIController.BarType.Beam);
+
+            genes[g] = new BridgeGene { start = start, end = end, type = type };
+
+            MonoBehaviour bar = TryPlaceBar(bc, genes[g]);
+
+            lastSuccess = (bar != null);
+
+            if (lastSuccess)
+            {
+                lastEnd = (bar is RoadBar r) ? r.nodeB
+                         : (bar is BeamBar bBeam) ? bBeam.nodeB
+                         : lastEnd;
+            }
+            else
+            {
+                brokenBars++;
+            }
+        }
+
+        return genes;
+    }
+
+    float[] SampleAction(float[] mu, float explorationNoise)
+    {
+        EnsureArray(ref lastAction, outputSize);
+
+        float[] a = new float[5];
+        float sigma = Mathf.Clamp(explorationNoise, 0.001f, 0.2f);
+
+        for (int i = 0; i < 5; i++)
+        {
+            float eps = UnityEngine.Random.Range(-1f, 1f);
+            float val = mu[i] + eps * sigma;
+            a[i] = Mathf.Clamp(val, -1f, 1f);
+        }
+
+        return a;
+    }
+
+    Vector2 DecodeStart(BarCreator bc, float sx, float sy)
+    {
+        float leftX  = bc.leftBound.position.x;
+        float rightX = bc.rightBound.position.x;
+
+        float minX = leftX - 1f;
+        float maxX = rightX + 1f;
+        float minY = -2f;
+        float maxY = 6f;
+
+        float nx = (sx + 1f) * 0.5f;
+        float ny = (sy + 1f) * 0.5f;
+
+        return new Vector2(
+            Mathf.Lerp(minX, maxX, nx),
+            Mathf.Lerp(minY, maxY, ny)
+        );
+    }
+
+    Vector2 DecodeEnd(Vector2 start, float angleNorm, float lengthNorm)
+    {
+        float angle = angleNorm * Mathf.PI;
+        Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        dir.Normalize();
+
+        float length = Mathf.Clamp01(Mathf.Abs(lengthNorm)) * 5f;
+
+        return start + dir * length;
+    }
+
+    MonoBehaviour TryPlaceBar(BarCreator bc, BridgeGene gene)
+    {
+        bc.aiMousePos = gene.start;
+        bc.mode = (gene.type == AIController.BarType.Road)
+            ? BarCreator.Mode.Road
+            : BarCreator.Mode.Beam;
+
+        bc.LeftClick();
+
+        bc.aiMousePos = gene.end;
+        MonoBehaviour bar = bc.LeftClick();
+
+        return bar;
     }
 }

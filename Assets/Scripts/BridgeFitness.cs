@@ -1,5 +1,4 @@
-using UnityEngine;
-using System.Collections.Generic;
+﻿using UnityEngine;
 
 public static class BridgeFitness
 {
@@ -8,179 +7,141 @@ public static class BridgeFitness
         BridgeGene[] genes,
         Goal goal,
         Checkpoint checkpoint,
-        BarCreator barCreator)
+        BarCreator bc)
     {
-        float fitness = 0f;
+        if (bc == null) return 0f;
 
-        float leftX  = barCreator.leftBound  != null ? barCreator.leftBound.position.x  : -10f;
-        float rightX = barCreator.rightBound != null ? barCreator.rightBound.position.x :  10f;
+        // ----------------------------------------------------------
+        // WORLD
+        // ----------------------------------------------------------
+        float leftX  = bc.leftBound.position.x;
+        float rightX = bc.rightBound.position.x;
+        float spanWidth = Mathf.Abs(rightX - leftX);
 
-        float spanMid   = (leftX + rightX) * 0.5f;
-        float spanWidth = Mathf.Max(1f, Mathf.Abs(rightX - leftX));
-        float extraMargin = spanWidth * 0.3f + 3f;
-
-        float maxDistance = 0f;
-        float startX = 0f;
-        bool haveCar = false;
+        // ----------------------------------------------------------
+        // 1. CAR PROGRESS
+        // ----------------------------------------------------------
+        float forwardProgress = 0f;
+        bool carFellEarly = false;
 
         if (cars != null)
         {
             foreach (var c in cars)
             {
                 if (c == null) continue;
-                haveCar = true;
-                maxDistance = Mathf.Max(maxDistance, c.DistanceTravelled);
-                startX = c.startX;
+
+                float dist = c.transform.position.x - leftX;
+
+                if (c.transform.position.y < -1f && dist < spanWidth * 0.2f)
+                    carFellEarly = true;
+
+                forwardProgress = Mathf.Max(forwardProgress, dist);
             }
         }
 
-        if (goal != null && haveCar)
-        {
-            float targetDist = rightX - startX;
-            float distNorm = Mathf.Clamp01(maxDistance / (targetDist + 0.0001f));
-            fitness += distNorm * 80f;
-        }
+        float progress01 = spanWidth > 0.5f
+            ? Mathf.Clamp01(forwardProgress / spanWidth)
+            : 0f;
 
-        if (checkpoint != null && checkpoint.checkpointReached)
-            fitness += 35f;
-
-        if (goal != null && goal.endReached)
-            fitness += 100f;
-
+        // ----------------------------------------------------------
+        // 2. STRUCTURE ANALYSIS
+        // ----------------------------------------------------------
         RoadBar[] roads = Object.FindObjectsOfType<RoadBar>();
         BeamBar[] beams = Object.FindObjectsOfType<BeamBar>();
 
         int totalBars = 0;
         int connectedBars = 0;
-        int floatingBars = 0;
         int anchoredBars = 0;
-        int crossSpanBars = 0;
-        int brokenBars = 0;
+        int properNodeConnections = 0;
 
-        float sagPenalty = 0f;
-        float steepPenalty = 0f;
-        float oobPenalty = 0f;
+        float sagTotal = 0f;
+        float oobBars  = 0f;
 
-        Point[] anchorPoints = null;
-        if (barCreator != null && barCreator.ai != null && barCreator.ai.pbtManager != null)
-            anchorPoints = barCreator.ai.pbtManager.anchorPoints;
+        const float sagLimit = 0.6f;
 
-        void ScoreBar(Point nodeA, Point nodeB, DistanceJoint2D jA, DistanceJoint2D jB, BridgeGene gene)
+        void ScoreBar(Point a, Point b, DistanceJoint2D ja, DistanceJoint2D jb)
         {
-            if (nodeA == null || nodeB == null) return;
+            if (a == null || b == null) return;
+
             totalBars++;
 
-            bool connected = (jA != null && jB != null);
-            bool anchored  = nodeA.isAnchored || nodeB.isAnchored;
-
-            if (connected) fitness += 1.0f;
-            else
+            bool connected = (ja != null && jb != null);
+            if (connected)
             {
-                floatingBars++;
-                fitness -= 0.1f;
+                connectedBars++;
+
+                if (!a.isFloating && !b.isFloating)
+                    properNodeConnections++;
             }
 
-            if (anchored)
-            {
+            // Anchor usage
+            if (a.isAnchored || b.isAnchored)
                 anchoredBars++;
-                fitness += 1.5f;
-            }
 
-            if (gene != null && gene.broken)
-            {
-                brokenBars++;
-            }
+            // Sag penalty
+            Vector2 mid = (a.rb.position + b.rb.position) * 0.5f;
+            if (mid.y < -3f)
+                sagTotal += Mathf.Abs(mid.y + 3f);
 
-            Vector2 a = nodeA.rb.position;
-            Vector2 b = nodeB.rb.position;
-            Vector2 mid = (a + b) * 0.5f;
-
-            float length = Vector2.Distance(a, b);
-            float horizontalness = 1f - Mathf.Abs(a.y - b.y) / (length + 0.0001f);
-
-            float lengthScore  = Mathf.Clamp01(1f - Mathf.Abs(length - 2f) / 2f);
-            float angleScore   = Mathf.Clamp01(horizontalness * 2f);
-            float geoScore     = (lengthScore * angleScore);
-
-            fitness += geoScore * 2.5f;
-
-            float nearestAnchorDist = 999f;
-            if (anchorPoints != null)
-            {
-                foreach (var p in anchorPoints)
-                {
-                    if (p == null) continue;
-                    float d = Vector2.Distance(mid, p.rb.position);
-                    if (d < nearestAnchorDist) nearestAnchorDist = d;
-                }
-            }
-
-            if (!anchored)
-            {
-                float penalty = Mathf.Clamp(nearestAnchorDist * 0.15f, 0f, 2f);
-                fitness -= penalty;
-            }
-
-            bool crossesSpan =
-                (a.x < spanMid && b.x > spanMid) ||
-                (a.x > spanMid && b.x < spanMid);
-
-            if (crossesSpan)
-                crossSpanBars++;
-
-            float dMid = Mathf.Abs(mid.x - spanMid);
-            float spanProx = Mathf.Clamp01(1f - dMid / (spanWidth * 0.5f));
-            fitness += spanProx * 1.8f;
-
-            bool simpleOOB = mid.x < leftX - 1f || mid.x > rightX + 1f;
-            if (simpleOOB) fitness -= 0.2f;
-
-            bool hardOOB =
-                mid.x < leftX - extraMargin ||
-                mid.x > rightX + extraMargin ||
-                mid.y < -10f ||
-                mid.y > 14f;
-
-            if (hardOOB) oobPenalty += 0.3f;
-
-            float sag = Mathf.Max(0f, 0f - mid.y);
-            sagPenalty += sag * 0.05f;
-
-            float dy = Mathf.Abs(a.y - b.y);
-            if (dy > 1.5f)
-                steepPenalty += (dy - 1.5f) * 0.05f;
-
-            float barDir = Mathf.Sign(b.x - a.x);
-            fitness += (barDir > 0f ? 0.3f : -0.2f);
+            // Out-of-bounds
+            if (mid.x < leftX - 1.5f || mid.x > rightX + 1.5f)
+                oobBars++;
         }
 
-        foreach (var r in roads) ScoreBar(r.nodeA, r.nodeB, r.jointA, r.jointB, r.geneReference);
-        foreach (var b in beams) ScoreBar(b.nodeA, b.nodeB, b.jointA, b.jointB, b.geneReference);
+        foreach (var r in roads) ScoreBar(r.nodeA, r.nodeB, r.jointA, r.jointB);
+        foreach (var b in beams) ScoreBar(b.nodeA, b.nodeB, b.jointA, b.jointB);
+
+        float stability = 0f;
+        float anchorUse = 0f;
+        float properConnectionRatio = 0f;
+        float sagPenalty = 0f;
 
         if (totalBars > 0)
         {
-            float barCount = totalBars;
-            float connectedRatio = connectedBars / barCount;
-            float anchoredRatio  = anchoredBars  / barCount;
-            float spanRatio      = crossSpanBars / barCount;
-            float densityNorm    = Mathf.Clamp01(totalBars / 16f);
+            stability             = Mathf.Clamp01(connectedBars / (float)totalBars);
+            anchorUse             = Mathf.Clamp01(anchoredBars / (float)totalBars);
+            properConnectionRatio = Mathf.Clamp01(properNodeConnections / (float)totalBars);
 
-            fitness += connectedRatio * 12f;
-            fitness += anchoredRatio  * 10f;
-            fitness += spanRatio      * 10f;
-            fitness += densityNorm    * 4f;
+            sagPenalty = Mathf.Clamp01(sagTotal / (totalBars * sagLimit));
         }
 
-        float structurePenalty =
-            brokenBars * 0.6f +
-            floatingBars * 0.2f +
-            sagPenalty +
-            steepPenalty +
-            oobPenalty;
+        // ----------------------------------------------------------
+        // 3. CHECKPOINT / GOAL
+        // ----------------------------------------------------------
+        float checkpointScore =
+            (checkpoint != null && checkpoint.checkpointReached) ? 1f : 0f;
 
-        structurePenalty = Mathf.Clamp(structurePenalty, 0f, 15f);
-        fitness -= structurePenalty;
+        float goalScore =
+            (goal != null && goal.endReached) ? 1f : 0f;
 
-        return Mathf.Clamp(fitness, -9999f, 9999f);
+        // ----------------------------------------------------------
+        // 4. FINAL FITNESS
+        // ----------------------------------------------------------
+        float fitness = 0f;
+
+        // Success bonuses
+        fitness += goalScore * 40f;
+        fitness += checkpointScore * 20f;
+
+        // Progress
+        fitness += progress01 * 20f;
+
+        // Structure rewards
+        fitness += stability * 12f;
+        fitness += properConnectionRatio * 20f;
+        fitness += anchorUse * 12f;
+
+        // Penalties
+        if (carFellEarly) fitness -= 10f;
+        if (stability < 0.35f && totalBars > 0) fitness -= 8f;
+
+        fitness -= sagPenalty * 15f;
+        fitness -= (oobBars / Mathf.Max(1f, totalBars)) * 6f;
+
+        // No structure at all = very bad
+        if (totalBars == 0)
+            fitness -= 50f;
+
+        return Mathf.Clamp(fitness, -100f, 100f);
     }
 }

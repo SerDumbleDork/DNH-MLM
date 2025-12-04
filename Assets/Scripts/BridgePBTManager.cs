@@ -5,7 +5,7 @@ public class BridgePBTManager : MonoBehaviour
 {
     [Header("Population Settings")]
     public int populationSize = 12;
-    public int genesPerBridge = 10;
+    public int genesPerBridge = 16;
     public int hiddenSize     = 48;
 
     [Header("Anchors (drag 3 Point objects here)")]
@@ -160,7 +160,7 @@ public class BridgePBTManager : MonoBehaviour
             BridgePBTModel child = CloneModel(models[parentIndex]);
 
             child.MutateHyperparameters();
-            child.MutateWeights(child.explorationNoise);
+            child.MutateWeights(child.explorationNoise * 0.02f);
 
             newPop[i] = child;
         }

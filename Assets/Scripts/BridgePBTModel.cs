@@ -21,12 +21,9 @@ public class BridgePBTModel
         return net.GenerateGenes(anchors, explorationNoise);
     }
 
-    public void Train(Point[] anchors, BridgeGene[] genes, float fitness)
+    public void Train(float fitness)
     {
         lastFitness = fitness;
-        float R = Mathf.Clamp(fitness + 100f, 0f, 300f);
-
-        net.Train(anchors, genes, R, learningRate);
     }
 
     public void CopyFrom(BridgePBTModel better)
@@ -41,10 +38,10 @@ public class BridgePBTModel
     public void MutateHyperparameters()
     {
         learningRate *= Random.Range(0.8f, 1.2f);
-        learningRate = Mathf.Clamp(learningRate, 0.00001f, 0.002f);
+        learningRate = Mathf.Clamp(learningRate, 0.0001f, 0.002f);
 
         explorationNoise *= Random.Range(0.8f, 1.3f);
-        explorationNoise = Mathf.Clamp(explorationNoise, 0.02f, 0.20f);
+        explorationNoise = Mathf.Clamp(explorationNoise, 0.05f, 0.15f);
 
     }
 
@@ -55,8 +52,8 @@ public class BridgePBTModel
 
     void RandomizeHyperparameters()
     {
-        learningRate = Random.Range(0.002f, 0.02f);
-        explorationNoise = Random.Range(0.05f, 0.15f);
+        learningRate = Random.Range(0.005f, 0.01f);
+        explorationNoise = Random.Range(0.02f, 0.06f);
     }
 
     public string ExportWeightsString()

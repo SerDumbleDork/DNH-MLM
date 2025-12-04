@@ -155,6 +155,15 @@ public class Sim : MonoBehaviour
             builder.CleanNodes();
 
         Debug.Log("Bridge and car reset.");
+
+            Checkpoint cp = FindObjectOfType<Checkpoint>();
+            if (cp != null)
+                cp.checkpointReached = false;
+
+            Goal g = FindObjectOfType<Goal>();
+            if (g != null)
+                g.endReached = false;
+
     }
 
     private void SpawnCar()

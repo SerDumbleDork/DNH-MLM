@@ -11,10 +11,6 @@ public class Checkpoint : MonoBehaviour
             checkpointReached = true;
             Debug.Log("Car crossed bridge successfully!");
         }
-        else
-        {
-            checkpointReached = false;
-        }
     }
 }
 
