@@ -1,7 +1,7 @@
 using UnityEngine;
+using System;
 using System.Globalization;
 using System.Text;
-using System;
 using System.Collections.Generic;
 
 public class BridgePolicyNetwork
@@ -20,11 +20,10 @@ public class BridgePolicyNetwork
     const float CoordX = 30f;
     const float CoordY = 10f;
 
-    // Stored for training (last episode)
-    float[] lastInput;    // size = inputSize
-    float[] lastHidden;   // size = hiddenSize
-    float[] lastMu;       // size = outputSize (means)
-    float[] lastAction;   // size = outputSize (actual used actions)
+    float[] lastInput;
+    float[] lastHidden;
+    float[] lastMu;
+    float[] lastAction;
 
     System.Random rng = new System.Random();
 
@@ -50,22 +49,18 @@ public class BridgePolicyNetwork
         {
             b1[j] = 0f;
             for (int i = 0; i < inputSize; i++)
-            {
                 w1[j, i] = UnityEngine.Random.Range(-0.1f, 0.1f);
-            }
         }
 
         for (int o = 0; o < outputSize; o++)
         {
             b2[o] = 0f;
             for (int j = 0; j < hiddenSize; j++)
-            {
                 w2[o, j] = UnityEngine.Random.Range(-0.1f, 0.1f);
-            }
         }
     }
 
-    float Tanh(float x) => (float)System.Math.Tanh(x);
+    float Tanh(float x) => (float)Math.Tanh(x);
 
     float[] Forward(float[] input)
     {
@@ -82,9 +77,8 @@ public class BridgePolicyNetwork
         {
             float sum = b1[j];
             for (int i = 0; i < inputSize; i++)
-            {
                 sum += w1[j, i] * input[i];
-            }
+
             lastHidden[j] = Mathf.Max(0f, sum);
         }
 
@@ -92,9 +86,8 @@ public class BridgePolicyNetwork
         {
             float sum = b2[o];
             for (int j = 0; j < hiddenSize; j++)
-            {
                 sum += w2[o, j] * lastHidden[j];
-            }
+
             lastMu[o] = Tanh(sum);
         }
 
@@ -124,49 +117,53 @@ public class BridgePolicyNetwork
         for (int i = 0; i < outputSize; i++)
         {
             float eps = UnityEngine.Random.Range(-1f, 1f);
-            float a = mu[i] + eps * sigma;
+            float a   = mu[i] + eps * sigma;
             lastAction[i] = Mathf.Clamp(a, -1f, 1f);
         }
-
-        BridgeGene[] genes = new BridgeGene[geneCount];
-        int idx = 0;
 
         float leftX  = Mathf.Min(a0.x, Mathf.Min(a1.x, a2.x));
         float rightX = Mathf.Max(a0.x, Mathf.Max(a1.x, a2.x));
 
         float minX = leftX - 2f;
         float maxX = rightX + 2f;
-
         float minY = -2f;
         float maxY = 6f;
 
         float maxLength = 5f;
 
+        BridgeGene[] genes = new BridgeGene[geneCount];
+        int idx = 0;
+
         for (int g = 0; g < geneCount; g++)
         {
-            if (idx + 4 >= outputSize)
-                break;
+            if (idx + 4 >= outputSize) break;
 
-            float sxNorm     = lastAction[idx++]; // start x [-1,1]
-            float syNorm     = lastAction[idx++]; // start y [-1,1]
-            float angleNorm  = lastAction[idx++]; // angle [-1,1]
-            float lengthNorm = lastAction[idx++]; // length [-1,1]
-            float typeLogit  = lastAction[idx++]; // type
+            float sxNorm     = lastAction[idx++];
+            float syNorm     = lastAction[idx++];
+            float angleNorm  = lastAction[idx++];
+            float lengthNorm = lastAction[idx++];
+            float typeLogit  = lastAction[idx++];
 
-            float sx01 = (sxNorm + 1f) * 0.5f;
-            float sy01 = (syNorm + 1f) * 0.5f;
+            Vector2 start;
 
-            Vector2 start = new Vector2(
-                Mathf.Lerp(minX, maxX, sx01),
-                Mathf.Lerp(minY, maxY, sy01)
-            );
+            if (g == 0)
+            {
+                start = anchors[0].rb.position;
+            }
+            else
+            {
+                float sx01 = (sxNorm + 1f) * 0.5f;
+                float sy01 = (syNorm + 1f) * 0.5f;
+
+                start = new Vector2(
+                    Mathf.Lerp(minX, maxX, sx01),
+                    Mathf.Lerp(minY, maxY, sy01)
+                );
+            }
 
             float angle = angleNorm * Mathf.PI;
             Vector2 dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
-
-            if (dir.sqrMagnitude < 0.0001f)
-                dir = Vector2.right;
-
+            if (dir.sqrMagnitude < 0.0001f) dir = Vector2.right;
             dir.Normalize();
 
             float length = Mathf.Clamp01(Mathf.Abs(lengthNorm)) * maxLength;
@@ -197,7 +194,7 @@ public class BridgePolicyNetwork
         float R = fitness;
 
         float sigma = 0.3f;
-        float invSigma2 = 1.0f / (sigma * sigma + 1e-6f);
+        float invSigma2 = 1f / (sigma * sigma + 1e-6f);
 
         float[] dL_dmu = new float[outputSize];
         float[] dL_dz2 = new float[outputSize];
@@ -235,9 +232,7 @@ public class BridgePolicyNetwork
         for (int j = 0; j < hiddenSize; j++)
         {
             if (lastHidden[j] <= 0f)
-            {
                 dL_dh[j] = 0f;
-            }
 
             float grad_h = dL_dh[j];
 
@@ -268,101 +263,28 @@ public class BridgePolicyNetwork
         for (int j = 0; j < hiddenSize; j++)
         {
             for (int i = 0; i < inputSize; i++)
-            {
                 w1[j, i] += UnityEngine.Random.Range(-scale, scale);
-            }
+
             b1[j] += UnityEngine.Random.Range(-scale, scale);
         }
 
         for (int o = 0; o < outputSize; o++)
         {
             for (int j = 0; j < hiddenSize; j++)
-            {
                 w2[o, j] += UnityEngine.Random.Range(-scale, scale);
-            }
+
             b2[o] += UnityEngine.Random.Range(-scale, scale);
         }
-    }
-
-    public string SerializeWeights()
-    {
-        var sb = new StringBuilder();
-
-        void Append(float v)
-        {
-            if (sb.Length > 0) sb.Append(',');
-            sb.Append(v.ToString("R", CultureInfo.InvariantCulture));
-        }
-
-        // w1: [hiddenSize, inputSize]
-        for (int j = 0; j < hiddenSize; j++)
-            for (int i = 0; i < inputSize; i++)
-                Append(w1[j, i]);
-
-        // b1: [hiddenSize]
-        for (int j = 0; j < hiddenSize; j++)
-            Append(b1[j]);
-
-        // w2: [outputSize, hiddenSize]
-        for (int o = 0; o < outputSize; o++)
-            for (int j = 0; j < hiddenSize; j++)
-                Append(w2[o, j]);
-
-        // b2: [outputSize]
-        for (int o = 0; o < outputSize; o++)
-            Append(b2[o]);
-
-        return sb.ToString();
-    }
-
-    public void DeserializeWeights(string data)
-    {
-        if (string.IsNullOrEmpty(data))
-            return;
-
-        string[] parts = data.Split(',');
-        int idx = 0;
-
-        // w1
-        for (int j = 0; j < hiddenSize; j++)
-            for (int i = 0; i < inputSize; i++)
-                w1[j, i] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
-
-        // b1
-        for (int j = 0; j < hiddenSize; j++)
-            b1[j] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
-
-        // w2
-        for (int o = 0; o < outputSize; o++)
-            for (int j = 0; j < hiddenSize; j++)
-                w2[o, j] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
-
-        // b2
-        for (int o = 0; o < outputSize; o++)
-            b2[o] = float.Parse(parts[idx++], CultureInfo.InvariantCulture);
     }
 
     public float[] GetAllWeights()
     {
         List<float> list = new List<float>();
 
-        // w1 (hiddenSize x inputSize)
-        for (int j = 0; j < hiddenSize; j++)
-            for (int i = 0; i < inputSize; i++)
-                list.Add(w1[j, i]);
-
-        // b1
-        for (int j = 0; j < hiddenSize; j++)
-            list.Add(b1[j]);
-
-        // w2 (outputSize x hiddenSize)
-        for (int o = 0; o < outputSize; o++)
-            for (int j = 0; j < hiddenSize; j++)
-                list.Add(w2[o, j]);
-
-        // b2
-        for (int o = 0; o < outputSize; o++)
-            list.Add(b2[o]);
+        foreach (float v in w1) list.Add(v);
+        foreach (float v in b1) list.Add(v);
+        foreach (float v in w2) list.Add(v);
+        foreach (float v in b2) list.Add(v);
 
         return list.ToArray();
     }
@@ -371,21 +293,17 @@ public class BridgePolicyNetwork
     {
         int idx = 0;
 
-        // w1
         for (int j = 0; j < hiddenSize; j++)
             for (int i = 0; i < inputSize; i++)
                 w1[j, i] = arr[idx++];
 
-        // b1
         for (int j = 0; j < hiddenSize; j++)
             b1[j] = arr[idx++];
 
-        // w2
         for (int o = 0; o < outputSize; o++)
             for (int j = 0; j < hiddenSize; j++)
                 w2[o, j] = arr[idx++];
 
-        // b2
         for (int o = 0; o < outputSize; o++)
             b2[o] = arr[idx++];
     }

@@ -23,7 +23,9 @@ public class BridgePBTModel
 
     public void Train(Point[] anchors, BridgeGene[] genes, float fitness)
     {
-        float R = fitness;
+        lastFitness = fitness;
+        float R = Mathf.Clamp(fitness + 100f, 0f, 300f);
+
         net.Train(anchors, genes, R, learningRate);
     }
 

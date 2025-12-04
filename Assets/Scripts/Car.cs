@@ -29,7 +29,7 @@ public class Car : MonoBehaviour
     {
         if (rb == null) return;
 
-        float speedX = isGrounded ? maxSpeed : 0f;
+        float speedX = isGrounded ? maxSpeed : 3f;
 
         if (isGrounded)
             groundedTime += Time.fixedDeltaTime;

@@ -7,6 +7,9 @@ public class BarCreator : MonoBehaviour
     public GameObject roadPrefab;
     public GameObject beamPrefab;
 
+    public Transform leftBound;
+    public Transform rightBound;
+
     public float snapRadius = 0.8f;
     public float maxLength = 5f;
 
@@ -70,11 +73,12 @@ public class BarCreator : MonoBehaviour
             }
             UndoLast();
         }
-        */
+        
 
         // Preview update
         if (placing)
             UpdatePreview();
+        */
     }
 
     public void BeginAIMode(Vector2 startPos, bool isRoad)
